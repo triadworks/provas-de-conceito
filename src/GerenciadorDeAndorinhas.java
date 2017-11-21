@@ -1,4 +1,5 @@
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -8,25 +9,26 @@ import java.util.List;
 
 public class GerenciadorDeAndorinhas {
 	public static List<Andorinha> getAndorinhas() throws IOException {
-		Path file = Paths.get("src/andorinhas.txt");
+		File file = new File("src/andorinhas.txt");
+						
+		FileInputStream fis = new FileInputStream(file);
 		
-		byte[] fileData = Files.readAllBytes(file);
-		
-		return GerenciadorDeAndorinhas.gerarAndorinhas(new String(fileData));
+		return gerarAndorinhas(fis);
 	}
 	
-	public static void listarAndorinhas(ArrayList<Andorinha> andorinhas) {
+	public static void listarAndorinhas(List<Andorinha> list) {
 		String resultado = "[";
+		StringBuilder builder = new StringBuilder(resultado);
 		
-		for (int i = 0; i < andorinhas.size(); i++) {
-			resultado += andorinhas.get(i).nome;
-			if (i < andorinhas.size() - 1) 
-				resultado += ", ";
+		for (int i = 0; i < list.size(); i++) {
+				builder.append(list.get(i).nome);
+			if (i < list.size() - 1) 
+				builder.append(", ");
 		}
 		
-		resultado += "]";
+		builder.append("]");
 		
-		System.out.println(resultado);
+		System.out.println(builder.toString());
 	}
 	
 	public static List<Andorinha> andorinhasPorLocalDeOrigem(LocalDeOrigem origem, ArrayList<Andorinha> andorinhas) {
@@ -40,15 +42,37 @@ public class GerenciadorDeAndorinhas {
 		return resultado;
 	}
 	
-	private static List<Andorinha> gerarAndorinhas(String texto) {
+	public static List<String> getNomesDasAndorinhas(List<Andorinha> andorinhas) {
+		List<String> nomes = new ArrayList<String>();
+		andorinhas.stream().map(n -> nomes.add(n.nome));
+		return nomes;
+	}
+	
+	private static List<Andorinha> gerarAndorinhas(FileInputStream fis) throws IOException {
 		
-		ArrayList<Andorinha> resultado = new ArrayList<Andorinha>();
+		List<Andorinha> resultado = new ArrayList<Andorinha>();
 		
-		for (String linha: texto.split("\n")) {
-			String[] atributos = linha.split(" ");
-			resultado.add(new Andorinha(atributos[0], LocalDeOrigem.valueOf(atributos[1])));
+//		for (String linha: texto.split("\n")) {
+//			String[] atributos = linha.split(" ");
+//			resultado.add(new Andorinha(atributos[0], LocalDeOrigem.valueOf(atributos[1])));
+//		}
+		
+		int content;
+		String linha = "";
+		while ((content = fis.read()) != -1) {
+			if ((char) content != '\n') {
+				linha += (char) content;
+			} else {
+				resultado.add(processarLinha(linha));
+				linha = "";
+			}
 		}
-		
+		resultado.add(processarLinha(linha));
 		return resultado;
+	}
+	
+	private static Andorinha processarLinha(String linha) {
+		String[] atributos = linha.split(" ");
+		return new Andorinha(atributos[0], LocalDeOrigem.valueOf(atributos[1]));
 	}
 }
